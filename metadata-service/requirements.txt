@@ -1,0 +1,21 @@
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+sqlalchemy==2.0.23
+alembic==1.12.1
+psycopg2-binary==2.9.9
+redis==5.0.1
+httpx==0.25.2
+python-dotenv==1.0.0
+psutil==5.9.6
+# 精简版：固定 sentence-transformers 与 torch 版本，避免自动升级到 5.x/新 CUDA 依赖
+sentence-transformers==2.2.2  # 用于质量规则引擎的向量化功能
+torch==2.2.1
+neo4j==5.14.0  # Neo4j图数据库客户端
+
+# 测试依赖
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-asyncio>=0.21.0
+
