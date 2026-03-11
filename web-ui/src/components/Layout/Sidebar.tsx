@@ -197,6 +197,18 @@ export const Sidebar = memo(function Sidebar({ isOpen, onClose }: SidebarProps) 
             { name: '基础数据维护', href: '/projects/basic-data', icon: Database },
           ],
         },
+        {
+          name: '运营管理',
+          href: '#',
+          icon: TrendingUp,
+          children: [
+            {
+              name: '行业报告自动化',
+              href: '/business/industry-report',
+              icon: FileText,
+            },
+          ],
+        },
       ],
     },
 
@@ -208,6 +220,7 @@ export const Sidebar = memo(function Sidebar({ isOpen, onClose }: SidebarProps) 
       children: [
         { name: 'AI助手', href: '/chat', icon: MessageSquare },
         { name: '智能体', href: '/agents', icon: Bot },
+        { name: '场景库', href: '/ai-scenarios', icon: FolderKanban },
         { name: '知识库', href: '/knowledge-bases', icon: BookOpen },
         { name: '知识图谱', href: '/knowledge-graph', icon: Network },
         { name: '对话历史', href: '/conversations', icon: MessageSquare },

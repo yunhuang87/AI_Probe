@@ -480,6 +480,20 @@ async def knowledge_base_proxy(request: Request, path: str):
     )
 
 
+# AI Scenario Service - 场景库
+@app.api_route("/api/ai-scenarios", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+@app.api_route("/api/ai-scenarios/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
+@limiter.limit(f"{settings.RATE_LIMIT_PER_MINUTE}/minute")
+async def ai_scenario_proxy(request: Request, path: str = ""):
+    """AI应用场景收集服务代理"""
+    forward_path = f"/api/v1/ai-scenarios/{path}" if path else "/api/v1/ai-scenarios"
+    return await gateway_proxy.forward_request(
+        request=request,
+        service_name="ai-scenario-service",
+        path=forward_path,
+    )
+
+
 # Memory Service
 @app.api_route("/api/memory/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 @limiter.limit(f"{settings.RATE_LIMIT_PER_MINUTE}/minute")

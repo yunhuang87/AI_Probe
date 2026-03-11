@@ -72,3 +72,14 @@ opencode-server-export/*.tar
 opencode-server-export/*.tar.part1
 opencode-server-export/*.tar.part2
 opencode-upload/
+
+# 行业报告自动化业务微服务本地环境文件
+project_management/business/yunying_Project01/backend/venv/
+project_management/business/yunying_Project01/backend/uploads/
+project_management/business/yunying_Project01/backend/reports/
+project_management/business/yunying_Project01/backend/data/
+
+.env
+.env.*
+*.env
+

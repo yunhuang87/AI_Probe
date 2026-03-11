@@ -1452,6 +1452,59 @@ services:
       - enterprise-ai-network
     restart: unless-stopped
 
+  # Industry Report Service - 行业产品报告自动化微服务（运营业务）
+  industry-report-service:
+    image: enterprise-ai-platform-industry-report-service:latest
+    build:
+      context: ./project_management/business/yunying_Project01
+      dockerfile: backend/Dockerfile
+    container_name: enterprise-ai-industry-report-service
+    ports:
+      - "${INDUSTRY_REPORT_SERVICE_PORT:-8021}:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
+      - LLM_API_URL=${LLM_API_URL:-https://ai.sinochem.com/api/model-service/v1/chat/completions}
+      - LLM_MODEL=${LLM_MODEL:-Qwen2.5-72B-32K-B-DX0s}
+    volumes:
+      - ./project_management/business/yunying_Project01/backend/app:/app/app:cached
+      - industry_report_uploads:/app/uploads
+      - industry_report_reports:/app/reports
+      - industry_report_data:/app/data
+    networks:
+      - enterprise-ai-network
+    restart: unless-stopped
+
+  # AI Scenario Service - AI应用场景收集微服务（AI智能-场景库）
+  ai-scenario-service:
+    image: enterprise-ai-platform-ai-scenario-service:latest
+    build:
+      context: ./project_management/business/ops_ai_scenarios
+      dockerfile: backend/Dockerfile
+    container_name: enterprise-ai-ai-scenario-service
+    ports:
+      - "${AI_SCENARIO_SERVICE_PORT:-8022}:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - AUTH_ENABLED=${AUTH_ENABLED:-true}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - DB_HOST=${DB_HOST:-postgres}
+      # 容器网络内 Postgres 固定监听 5432（宿主机映射端口不影响容器间通信）
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-ai_user}
+      - DB_PASSWORD=${DB_PASSWORD:-ai_password}
+      - DB_NAME=${DB_NAME:-ai_platform}
+      - UPLOAD_DIR=/app/uploads
+      - MAX_UPLOAD_MB=${AI_SCENARIO_MAX_UPLOAD_MB:-20}
+    volumes:
+      - scenario_uploads:/app/uploads
+    networks:
+      - enterprise-ai-network
+    restart: unless-stopped
+
 volumes:
   redis_data:
     driver: local
@@ -1513,6 +1566,16 @@ volumes:
     driver: local
 
   opencode_storage:
+    driver: local
+
+  scenario_uploads:
+    driver: local
+
+  industry_report_uploads:
+    driver: local
+  industry_report_reports:
+    driver: local
+  industry_report_data:
     driver: local
 
 networks:

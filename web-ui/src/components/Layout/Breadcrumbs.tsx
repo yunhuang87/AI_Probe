@@ -12,6 +12,7 @@ interface BreadcrumbItem {
 const routeLabels: Record<string, string> = {
   '/': '首页',
   '/chat': 'AI助手',
+  '/ai-scenarios': '场景库',
   '/workflow-designer': '工作流设计器',
   '/admin': '管理后台',
   '/admin/dashboard': '仪表板',
@@ -78,12 +79,16 @@ export function Breadcrumbs() {
       if (routeLabels[currentPath]) {
         label = routeLabels[currentPath];
       } else if (isUUID) {
-        // 如果是UUID，尝试从localStorage或sessionStorage获取项目名称
-        // 或者显示一个更友好的标签
-        const projectName = typeof window !== 'undefined'
-          ? sessionStorage.getItem(`project_name_${path}`) || localStorage.getItem(`project_name_${path}`)
-          : null;
-        label = projectName || '项目详情';
+        // 如果是UUID，根据上一级路径推断实体类型（项目/场景等）
+        const parent = paths[index - 1] || '';
+        const nameKeyPrefix = parent === 'ai-scenarios' ? 'ai_scenario_name_' : 'project_name_';
+        const fallbackLabel = parent === 'ai-scenarios' ? '场景详情' : '项目详情';
+        const entityName =
+          typeof window !== 'undefined'
+            ? sessionStorage.getItem(`${nameKeyPrefix}${path}`) ||
+              localStorage.getItem(`${nameKeyPrefix}${path}`)
+            : null;
+        label = entityName || fallbackLabel;
       } else if (pathSegmentLabels[path]) {
         // 如果路径段有中文映射，使用中文
         label = pathSegmentLabels[path];

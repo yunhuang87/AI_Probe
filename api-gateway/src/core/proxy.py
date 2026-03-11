@@ -85,6 +85,7 @@ class GatewayProxy:
                     "agent-orchestrator": "http://localhost:8011",
                     "agent-registry": "http://localhost:8012",
                     "project-management": "http://localhost:8016",
+                    "ai-scenario-service": "http://localhost:8022",
                 }
                 mode = "local"
             else:
@@ -103,6 +104,7 @@ class GatewayProxy:
                     "agent-orchestrator": "http://agent-orchestrator:8011",
                     "agent-registry": "http://agent-registry:8012",
                     "project-management": "http://project-management:8016",
+                    "ai-scenario-service": "http://ai-scenario-service:8000",
                 }
                 mode = "docker"
             
