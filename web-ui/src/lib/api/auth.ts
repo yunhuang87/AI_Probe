@@ -9,8 +9,6 @@ const trimTrailingSlash = (url: string) => url.replace(/\/+$/, '');
 const isLoopbackUrl = (url: string) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(url);
 
 const isBrowser = typeof window !== 'undefined';
-const isLocalBrowser = () =>
-  isBrowser && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 const safeGetHost = (url: string) => {
   try {
@@ -22,20 +20,10 @@ const safeGetHost = (url: string) => {
 
 const shouldUseProxy = () => {
   if (!isBrowser) return false;
-  if (isLocalBrowser()) return false;
-
-  const gatewayIsLoopback = !API_GATEWAY_URL || isLoopbackUrl(API_GATEWAY_URL);
-  const authIsLoopback = !AUTH_SERVICE_URL || isLoopbackUrl(AUTH_SERVICE_URL);
-  if (gatewayIsLoopback && authIsLoopback) return true;
-
-  const originHost = window.location.host;
-  const gatewayHost = safeGetHost(API_GATEWAY_URL);
-  const authHost = safeGetHost(AUTH_SERVICE_URL);
-
-  if (gatewayHost && gatewayHost !== originHost) return true;
-  if (authHost && authHost !== originHost) return true;
-
-  return false;
+  // 为了避免浏览器本地代理/防火墙对 localhost:8080 等端口的干扰，
+  // 登录、刷新等认证请求统一通过 Next.js 的 /api/auth 代理转发到网关/认证服务。
+  // 这样由服务端发起到网关的请求，行为与 curl / 服务器内部访问保持一致，更稳定。
+  return true;
 };
 
 const resolveAuthBaseUrl = () => {
