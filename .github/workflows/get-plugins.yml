@@ -1,0 +1,132 @@
+name: Get plugins
+
+on:
+  workflow_call:
+    inputs:
+      require_tag:
+        description: 'If set, only include repos that have this git tag (e.g. v1.9.47 or v2.0.1)'
+        required: false
+        type: string
+      require_branch:
+        description: 'If set, only include repos that have this branch (e.g. v1)'
+        required: false
+        type: string
+    secrets:
+      NOCOBASE_APP_PRIVATE_KEY:
+        required: true
+    outputs:
+      all-plugins:
+        value: ${{ jobs.get-plugins.outputs.all-plugins }}
+      custom-plugins:
+        value: ${{ jobs.get-plugins.outputs.custom-plugins }}
+      rc-plugins:
+        value: ${{ jobs.get-plugins.outputs.rc-plugins }}
+      beta-plugins:
+        value: ${{ jobs.get-plugins.outputs.beta-plugins }}
+      alpha-plugins:
+        value: ${{ jobs.get-plugins.outputs.alpha-plugins }}
+      unreleased-plugins:
+        value: ${{ jobs.get-plugins.outputs.unreleased-plugins }}
+
+jobs:
+  get-plugins:
+    runs-on: ubuntu-latest
+    outputs:
+      all-plugins: ${{ steps.get-plugins.outputs.all-plugins }}
+      custom-plugins: ${{ steps.get-plugins.outputs.custom-plugins }}
+      rc-plugins: ${{ steps.get-plugins.outputs.rc-plugins }}
+      beta-plugins: ${{ steps.get-plugins.outputs.beta-plugins }}
+      alpha-plugins: ${{ steps.get-plugins.outputs.alpha-plugins }}
+      unreleased-plugins: ${{ steps.get-plugins.outputs.unreleased-plugins }}
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.NOCOBASE_APP_ID }}
+          private-key: ${{ secrets.NOCOBASE_APP_PRIVATE_KEY }}
+          owner: nocobase
+          skip-token-revoke: true
+      - id: get-plugins
+        name: Get plugins
+        shell: bash
+        run: |
+          function retry() {
+            local i=0
+            local plugins="[]"
+            until [ "$i" -ge 2 ]
+            do
+              plugins=$(gh search repos "props.plugin-type:$1" --owner=nocobase --json name | jq -r 'map(.name) | tostring') && [[ "$plugins" != "[]" ]] && break
+              i=$((i+1))
+              sleep 10
+            done
+            echo $plugins
+          }
+
+          function filterByBranch() {
+            local branch="$1"
+            local reposJson="$2"
+
+            if [[ -z "$branch" || "$reposJson" == "[]" ]]; then
+              echo "$reposJson"
+              return 0
+            fi
+
+            local repos
+            repos=$(echo "$reposJson" | jq -r '.[]')
+
+            local kept="[]"
+            for repo in $repos; do
+              if gh api -H "Accept: application/vnd.github+json" \
+                "/repos/nocobase/$repo/git/ref/heads/$branch" >/dev/null 2>&1; then
+                kept=$(echo "$kept" | jq --arg r "$repo" '. + [$r]')
+              fi
+            done
+
+            echo "$kept" | jq -c '.'
+          }
+
+          function filterByTag() {
+            local tag="$1"
+            local reposJson="$2"
+
+            if [[ -z "$tag" || "$reposJson" == "[]" ]]; then
+              echo "$reposJson"
+              return 0
+            fi
+
+            local repos
+            repos=$(echo "$reposJson" | jq -r '.[]')
+
+            local kept="[]"
+            for repo in $repos; do
+              if gh api -H "Accept: application/vnd.github+json" \
+                "/repos/nocobase/$repo/git/ref/tags/$tag" >/dev/null 2>&1; then
+                kept=$(echo "$kept" | jq --arg r "$repo" '. + [$r]')
+              fi
+            done
+
+            echo "$kept" | jq -c '.'
+          }
+
+          REQUIRE_TAG='${{ inputs.require_tag }}'
+
+          REQUIRE_BRANCH='${{ inputs.require_branch }}'
+
+          allPlugins=$(filterByTag "$REQUIRE_TAG" "$(filterByBranch "$REQUIRE_BRANCH" "$(retry custom,rc,beta,alpha,unreleased)")")
+          if [[ "$allPlugins" == "[]" ]]; then
+            echo "Get all plugins empty"
+            exit 1
+          fi
+          customPlugins=$(filterByTag "$REQUIRE_TAG" "$(filterByBranch "$REQUIRE_BRANCH" "$(retry custom)")")
+          rcPlugins=$(filterByTag "$REQUIRE_TAG" "$(filterByBranch "$REQUIRE_BRANCH" "$(retry rc)")")
+          betaPlugins=$(filterByTag "$REQUIRE_TAG" "$(filterByBranch "$REQUIRE_BRANCH" "$(retry beta,rc)")")
+          alphaPlugins=$(filterByTag "$REQUIRE_TAG" "$(filterByBranch "$REQUIRE_BRANCH" "$(retry alpha,beta,rc)")")
+          unreleasedPlugins=$(filterByTag "$REQUIRE_TAG" "$(filterByBranch "$REQUIRE_BRANCH" "$(retry unreleased)")")
+          echo "all-plugins=$allPlugins" >> "$GITHUB_OUTPUT"
+          echo "custom-plugins=$customPlugins" >> "$GITHUB_OUTPUT"
+          echo "rc-plugins=$rcPlugins" >> "$GITHUB_OUTPUT"
+          echo "beta-plugins=$betaPlugins" >> "$GITHUB_OUTPUT"
+          echo "alpha-plugins=$alphaPlugins" >> "$GITHUB_OUTPUT"
+          echo "unreleased-plugins=$unreleasedPlugins" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
