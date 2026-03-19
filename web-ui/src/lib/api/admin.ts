@@ -94,8 +94,9 @@ export async function getUser(userId: string): Promise<UserDetail> {
 }
 
 export async function createUser(userData: CreateUserRequest): Promise<User> {
-  // 后端路由签名为 create_user(user_data: UserCreate, ...)，需要使用嵌套字段
-  return authServiceClient.post<User>('/admin/users', { user_data: userData });
+  // auth-service 的路由签名为 create_user(user_data: UserCreate, ...)：
+  // 只有一个 body 参数时，FastAPI 默认期望请求体是 UserCreate 字段本身（而不是再包一层 user_data）
+  return authServiceClient.post<User>('/admin/users', userData);
 }
 
 export interface UpdateUserRequest {
@@ -110,8 +111,8 @@ export interface UpdateUserRequest {
 }
 
 export async function updateUser(userId: string, userData: UpdateUserRequest): Promise<User> {
-  // 与后端 update_user(user_data: UserUpdate, ...) 对应
-  return authServiceClient.put<User>(`/admin/users/${userId}`, { user_data: userData });
+  // 与后端 update_user(user_data: UserUpdate, ...) 对应：body 期望为 UserUpdate 字段本身
+  return authServiceClient.put<User>(`/admin/users/${userId}`, userData);
 }
 
 export async function deleteUser(userId: string): Promise<void> {
